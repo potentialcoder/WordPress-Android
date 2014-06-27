@@ -154,6 +154,7 @@ public class WordPress extends Application {
         if (!Utils.isDebugBuild()) {
             Crashlytics.start(this);
         }
+        ABTestingUtils.init(this);
         HelpshiftHelper.init(this);
         versionName = getVersionName(this);
         initWpDb();
