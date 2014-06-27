@@ -97,6 +97,7 @@ android {
 
         // Local dependencies
         compile files('libs/MixpanelAPI.jar')
+        compile files('libs/apptimize-android-2.1.1.jar')
     }
 
     sourceSets {
