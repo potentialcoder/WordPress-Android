@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 
 import org.wordpress.android.R;
 import org.wordpress.android.datasets.ReaderDatabase;
@@ -324,16 +325,38 @@ public class ReaderPostListActivity extends WPActionBarActivity
             @Override
             public void onUpdateResult(UpdateResult result) {
                 if (!isFinishing() && result == UpdateResult.CHANGED) {
-                    // if followed blogs have changed, remove posts in blogs that are no longer followed
-                    int numPurged = ReaderPostTable.purgeUnfollowedPosts();
-                    if (numPurged > 0 && isListFragmentForTagShowing(ReaderTag.TAG_NAME_FOLLOWING)) {
-                        AppLog.d(T.READER, "reader activity > refreshing post list to remove purged posts");
-                        getListFragment().refreshPosts();
-                    }
+                    purgeUnfollowedPosts();
                 }
             }
         };
         ReaderBlogActions.updateFollowedBlogs(listener);
+    }
+
+    /*
+     * remove posts in blogs that are no longer followed
+     */
+    private void purgeUnfollowedPosts() {
+        final Handler handler = new Handler();
+
+        new Thread() {
+            @Override
+            public void run() {
+                // purge in the background
+                int numPurged = ReaderPostTable.purgeUnfollowedPosts();
+
+                // if any posts were purged and we're showing posts in followed blogs, refresh the
+                // list fragment so purged posts no longer appear
+                if (numPurged > 0) {
+                    handler.post(new Runnable() {
+                        public void run() {
+                            if (isListFragmentForTagShowing(ReaderTag.TAG_NAME_FOLLOWING)) {
+                                getListFragment().refreshPosts();
+                            }
+                        }
+                    });
+                }
+            }
+        }.start();
     }
 
     /*
