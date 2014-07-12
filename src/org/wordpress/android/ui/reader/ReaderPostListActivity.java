@@ -308,9 +308,18 @@ public class ReaderPostListActivity extends WPActionBarActivity
             @Override
             public void onUpdateResult(UpdateResult result) {
                 if (result == UpdateResult.CHANGED) {
-                    // if followed blogs have changed, removed posts in blogs that are no
+                    // if followed blogs have changed, remove posts in blogs that are no
                     // longer followed
-                    ReaderPostTable.purgeUnfollowedPosts();
+                    int numPurged = ReaderPostTable.purgeUnfollowedPosts();
+                    if (numPurged > 0 && hasListFragment()) {
+                        // if posts were purged and the user is currently viewing "Blogs I Follow,"
+                        // refresh the list so purged posts no longer appear
+                        ReaderPostListFragment listFragment = getListFragment();
+                        if (listFragment.getCurrentTagName().equals(ReaderTag.TAG_NAME_FOLLOWING)) {
+                            AppLog.d(T.READER, "reader activity > refreshing post list to remove purged posts");
+                            listFragment.refreshPosts();
+                        }
+                    }
                 }
             }
         };
