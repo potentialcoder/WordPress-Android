@@ -291,9 +291,9 @@ public class ReaderPostListActivity extends WPActionBarActivity
                 AppLog.i(T.READER, "reader activity > updating current user");
                 ReaderUserActions.updateCurrentUser(null);
 
-                // update followed blogs
+                // update the blogs the user is following
                 AppLog.i(T.READER, "reader activity > updating followed blogs");
-                ReaderBlogActions.updateFollowedBlogs(null);
+                updateFollowedBlogs();
 
                 // update cookies so that we can show authenticated images in WebViews
                 AppLog.i(T.READER, "reader activity > updating cookies");
@@ -303,6 +303,19 @@ public class ReaderPostListActivity extends WPActionBarActivity
         ReaderTagActions.updateTags(listener);
     }
 
+    private void updateFollowedBlogs() {
+        ReaderActions.UpdateResultListener listener = new ReaderActions.UpdateResultListener() {
+            @Override
+            public void onUpdateResult(UpdateResult result) {
+                if (result == UpdateResult.CHANGED) {
+                    // if followed blogs have changed, removed posts in blogs that are no
+                    // longer followed
+                    ReaderPostTable.purgeUnfollowedPosts();
+                }
+            }
+        };
+        ReaderBlogActions.updateFollowedBlogs(listener);
+    }
     /*
      * user tapped a post in the list fragment
      */
