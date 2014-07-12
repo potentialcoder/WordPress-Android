@@ -241,6 +241,19 @@ public class ReaderPostListActivity extends WPActionBarActivity
     }
 
     /*
+     * is the list fragment showing posts with the passed tag?
+     */
+    private boolean isListFragmentForTagShowing(String tagName) {
+        if (tagName == null) {
+            return false;
+        }
+        ReaderPostListFragment listFragment = getListFragment();
+        return listFragment != null
+                && listFragment.getPostListType() == ReaderTypes.ReaderPostListType.TAG_FOLLOWED
+                && listFragment.getCurrentTagName().equals(tagName);
+    }
+
+    /*
      * initial update performed at startup to ensure we have the latest reader-related info
      */
     private void performInitialUpdate() {
@@ -303,28 +316,26 @@ public class ReaderPostListActivity extends WPActionBarActivity
         ReaderTagActions.updateTags(listener);
     }
 
+    /*
+     * request the latest list of blogs the user is following
+     */
     private void updateFollowedBlogs() {
         ReaderActions.UpdateResultListener listener = new ReaderActions.UpdateResultListener() {
             @Override
             public void onUpdateResult(UpdateResult result) {
-                if (result == UpdateResult.CHANGED) {
-                    // if followed blogs have changed, remove posts in blogs that are no
-                    // longer followed
+                if (!isFinishing() && result == UpdateResult.CHANGED) {
+                    // if followed blogs have changed, remove posts in blogs that are no longer followed
                     int numPurged = ReaderPostTable.purgeUnfollowedPosts();
-                    if (numPurged > 0 && hasListFragment()) {
-                        // if posts were purged and the user is currently viewing "Blogs I Follow,"
-                        // refresh the list so purged posts no longer appear
-                        ReaderPostListFragment listFragment = getListFragment();
-                        if (listFragment.getCurrentTagName().equals(ReaderTag.TAG_NAME_FOLLOWING)) {
-                            AppLog.d(T.READER, "reader activity > refreshing post list to remove purged posts");
-                            listFragment.refreshPosts();
-                        }
+                    if (numPurged > 0 && isListFragmentForTagShowing(ReaderTag.TAG_NAME_FOLLOWING)) {
+                        AppLog.d(T.READER, "reader activity > refreshing post list to remove purged posts");
+                        getListFragment().refreshPosts();
                     }
                 }
             }
         };
         ReaderBlogActions.updateFollowedBlogs(listener);
     }
+
     /*
      * user tapped a post in the list fragment
      */
